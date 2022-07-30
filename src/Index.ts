@@ -2,26 +2,48 @@ import fetch from 'node-fetch'
 
 console.log('------------------')
 
-const POKEMON_INDEX: Number = 1
-let speciesUrl = "https://pokeapi.co/api/v2/pokemon-species/" + POKEMON_INDEX
+const INPUT_INDEX: number = 1
 
-async function getImage(): Promise<String> {
-    let response = await fetch(speciesUrl)
-    let json = await response.json()
-
-    let image_response = await fetch("https://pokeapi.co/api/v2/pokemon/" + json.name)
-    let image_json = await image_response.json()
-
-    return image_json.sprites.front_default
+type pkTypes = {
+    type1: string;
+    type2?: string;
 }
 
-async function saveImage(): Promise<void> {
-    await getImage()
-    console.log("Image found.")
+type Pokemon = {
+    index: number;
+    name: string;
+    pkTypes: pkTypes;
+    image: any;
 }
 
-saveImage()
+async function findPokemonFromIndex(pkIndex: number): Promise<any> {
+    let speciesData = await requestSpeciesData(pkIndex)
+    let pkName = speciesData.name
+    let pkURL = constructPokemonURL(pkName)
+    let pkData = await requestPokemonData(pkURL)
+    return buildPokemon(pkIndex, pkName, pkData)
+}
 
+async function requestSpeciesData(pkIndex: number): Promise<any> {
+    let response = await fetch("https://pokeapi.co/api/v2/pokemon-species/" + pkIndex)
+    return await response.json()
+}
 
-// save image
-// create mock response
+function constructPokemonURL(pkName: string): string {
+    return "https://pokeapi.co/api/v2/pokemon/" + pkName
+}
+
+async function requestPokemonData(pkURL: string): Promise<any> {
+    return (await fetch(pkURL)).json()
+}
+
+function buildPokemon(pkIndex: number, pkName: string, pkData: any): Pokemon {
+    return {
+        index: pkIndex,
+        name: pkName,
+        pkTypes: {type1: 'grass', type2: 'fire'},
+        image: pkData.sprites.front_default
+    }
+}
+
+findPokemonFromIndex(INPUT_INDEX).then((pokemon) => console.log(pokemon))
